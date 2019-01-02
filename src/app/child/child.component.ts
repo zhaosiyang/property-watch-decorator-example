@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 // import {OnChange} from 'property-watch-decorator';
 
-// This decorator function is now available in npm registry 'property-watch-decorator'
+// This decorator function can also be imported from npm package 'property-watch-decorator'
 export function OnChange<T>(observer: (value: T) => void) {
   let _cachedValue: T;
   return (target: any, key: PropertyKey) => {
@@ -29,14 +29,12 @@ export class ChildComponent {
   foo = 'bar';
 
   @OnChange(function (value) {
-    console.log(`title is changed to: ${value}     `, 'Others:', 'this.foo', this.foo, 'this.title', this.title, 'this.count', this.count);
+    console.log(`title is changed to: ${value}`);
+    console.log(`Other properties can also be accessed. this.foo=${this.foo} this.title=${this.title} this.count=${this.count}`);
   })
   title: string;
 
-  // equivalent if replace "this.count" with "value"
-  @OnChange(function (value) {
-    console.log(`count is changed to: ${value}     `, 'Others:', 'this.foo', this.foo, 'this.title', this.title, 'this.count', this.count);
-  })
+  @OnChange(onCountChange)
   @Input()
   count: number;
 
@@ -44,5 +42,10 @@ export class ChildComponent {
     this.title = this.title === 'hello' ? 'world' : 'hello';
   }
 
+}
+
+function onCountChange(value) {
+  console.log(`count is changed to: ${value}`);
+  console.log(`Other properties can also be accessed. this.foo=${this.foo} this.title=${this.title} this.count=${this.count}`);
 }
 
