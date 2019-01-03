@@ -1,14 +1,28 @@
 import {Component, Input} from '@angular/core';
-// import {OnChange} from 'property-watch-decorator';
 
-// This decorator function can also be imported from npm package 'property-watch-decorator'
-export function OnChange<T>(observer: (value: T) => void) {
+export interface SimpleChange<T> {
+  firstChange: boolean;
+  previousValue: T;
+  currentValue: T;
+  isFirstChange: () => boolean;
+}
+
+export function OnChange<T = any>(callback: (value: T, simpleChange?: SimpleChange<T>) => void) {
   let _cachedValue: T;
+  let _isFirstChange = true;
   return (target: any, key: PropertyKey) => {
     Object.defineProperty(target, key, {
       set: function (value) {
+        const oldValue = _cachedValue;
         _cachedValue = value;
-        observer.call(this, _cachedValue);
+        const simpleChange: SimpleChange<T> = {
+          firstChange: _isFirstChange,
+          previousValue: oldValue,
+          currentValue: _cachedValue,
+          isFirstChange: () => _isFirstChange,
+        };
+        _isFirstChange = false;
+        callback.call(this, _cachedValue, simpleChange);
       },
       get: function () {
         return _cachedValue;
@@ -28,13 +42,13 @@ export class ChildComponent {
 
   foo = 'bar';
 
-  @OnChange(function (value) {
+  @OnChange<string>(function (value, simpleChange) {
     console.log(`title is changed to: ${value}`);
     console.log(`Other properties can also be accessed. this.foo=${this.foo} this.title=${this.title} this.count=${this.count}`);
   })
   title: string;
 
-  @OnChange(onCountChange)
+  @OnChange<number>(onCountChange)
   @Input()
   count: number;
 
@@ -44,7 +58,7 @@ export class ChildComponent {
 
 }
 
-function onCountChange(value) {
+function onCountChange(value, simpleChange) {
   console.log(`count is changed to: ${value}`);
   console.log(`Other properties can also be accessed. this.foo=${this.foo} this.title=${this.title} this.count=${this.count}`);
 }
