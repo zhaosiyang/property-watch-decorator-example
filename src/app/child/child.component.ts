@@ -16,8 +16,7 @@ export function OnChange<T = any>(callback: (value: T, simpleChange?: SimpleChan
         // change status of "isFirstChange"
         if (this[isFirstChangeKey] === undefined) {
           this[isFirstChangeKey] = true;
-        }
-        if (this[isFirstChangeKey] === true) {
+        } else {
           this[isFirstChangeKey] = false;
         }
         // No operation if new value is same as old value
