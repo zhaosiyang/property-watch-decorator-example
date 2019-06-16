@@ -7,22 +7,33 @@ export interface SimpleChange<T> {
   isFirstChange: () => boolean;
 }
 
-export function OnChange<T = any>(callback: (value: T, simpleChange?: SimpleChange<T>) => void) {
+export interface CallBackFunction<T> {
+  (value: T, change?: SimpleChange<T>): void;
+}
+
+export function OnChange<T = any>(callback: CallBackFunction<T> | string) {
+
   const cachedValueKey = Symbol();
   const isFirstChangeKey = Symbol();
+
   return (target: any, key: PropertyKey) => {
+
+    const callBackFn: CallBackFunction<T> = typeof callback === 'string' ? target[callback] : callback;
+    if (!callBackFn) {
+      throw new Error(`Cannot find method ${callback} in class ${target.constructor.name}`);
+    }
+
     Object.defineProperty(target, key, {
       set: function (value) {
+
         // change status of "isFirstChange"
-        if (this[isFirstChangeKey] === undefined) {
-          this[isFirstChangeKey] = true;
-        } else {
-          this[isFirstChangeKey] = false;
-        }
+        this[isFirstChangeKey] = this[isFirstChangeKey] === undefined;
+
         // No operation if new value is same as old value
         if (!this[isFirstChangeKey] && this[cachedValueKey] === value) {
           return;
         }
+
         const oldValue = this[cachedValueKey];
         this[cachedValueKey] = value;
         const simpleChange: SimpleChange<T> = {
@@ -31,7 +42,7 @@ export function OnChange<T = any>(callback: (value: T, simpleChange?: SimpleChan
           currentValue: this[cachedValueKey],
           isFirstChange: () => this[isFirstChangeKey],
         };
-        callback.call(this, this[cachedValueKey], simpleChange);
+        callBackFn.call(this, this[cachedValueKey], simpleChange);
       },
       get: function () {
         return this[cachedValueKey];
@@ -39,6 +50,7 @@ export function OnChange<T = any>(callback: (value: T, simpleChange?: SimpleChan
     });
   };
 }
+
 
 @Component({
   selector: 'app-child',
@@ -57,12 +69,17 @@ export class ChildComponent {
   })
   title: string;
 
-  @OnChange<number>(onCountChange)
+  @OnChange<number>('onCountChange2')
   @Input()
   count: number;
 
   changeTitle() {
     this.title = this.title === 'hello' ? 'world' : 'hello';
+  }
+
+  onCountChange2(value, simpleChange) {
+    console.log(`2count is changed to: ${value}`);
+    console.log(`2Other properties can also be accessed. this.foo=${this.foo} this.title=${this.title} this.count=${this.count}`);
   }
 
 }
